@@ -363,6 +363,9 @@
             border-radius: 12px;
         }
 
+        .categoria-cabecera { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+        .categoria-cabecera h3 { margin-bottom: 0; }
+
         /* ========== MODAL FICHA ========== */
         .modal-overlay {
             position: fixed;
@@ -738,6 +741,18 @@
         <!-- ============================================= -->
         <div class="tab-content" id="tab3">
             <h2 style="color:#1e3a6f; margin-bottom:20px;">Categorías por Año de Nacimiento</h2>
+            <div class="search-box">
+                <div class="form-group">
+                    <label for="buscarAnioInput">Buscar por año de nacimiento (4 dígitos)</label>
+                    <input type="text" id="buscarAnioInput" inputmode="numeric" maxlength="4" placeholder="Ej: 2008">
+                </div>
+                <div class="form-group">
+                    <button class="btn" id="btnBuscarAnio">🔎 Buscar</button>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-secondary" id="btnLimpiarAnio">✖ Ver todos</button>
+                </div>
+            </div>
             <div id="categorias-container"></div>
         </div>
 
@@ -1385,15 +1400,23 @@
             }
 
             // ---------- ARRANQUE CON ROLES ----------
+            // La edad se recalcula siempre con la fecha de hoy
+            function conEdadActual(lista) {
+                lista.forEach(function (s) {
+                    const e = calcularEdad(s.fechaNac);
+                    if (e !== '') s.edad = String(e);
+                });
+                return lista;
+            }
             async function recargar() {
                 const l = await api('list');
-                if (l.ok) { cache = l.socios; if (tab4.style.display === 'block') renderizarBaseDatos(); }
+                if (l.ok) { cache = conEdadActual(l.socios); if (tab4.style.display === 'block') renderizarBaseDatos(); if (tab3.style.display === 'block') renderizarCategorias(); }
             }
             async function arrancar() {
                 const w = await api('whoami');
                 if (!w.ok) { document.body.innerHTML = '<p style="padding:40px;font:20px sans-serif">🔒 Enlace no válido o sin conexión. Pida el enlace correcto al administrador.</p>'; return; }
                 ROL = w.rol;
-                const l = await api('list'); if (l.ok) cache = l.socios;
+                const l = await api('list'); if (l.ok) cache = conEdadActual(l.socios);
                 inicializar();
                 if (ROL === 'LECTOR') {
                     document.querySelector('[data-tab="tab1"]').remove();
@@ -1427,58 +1450,106 @@
 
             // --- Funciones de renderizado ---
 
-            // Renderizar Categorías (agrupadas por año de nacimiento)
+            // ---- Utilidades ----
+            const escH = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            // aaaa-mm-dd  ->  dd/mm/aaaa
+            function fmtFecha(f) {
+                const m = String(f || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+                return m ? m[3] + '/' + m[2] + '/' + m[1] : (f || '');
+            }
+            function anioDe(s) { const m = String(s.fechaNac || '').match(/^(\d{4})-/); return m ? m[1] : ''; }
+            function celdasSocio(s) {
+                return '<td>' + escH(s.numeroSocio) + '</td><td>' + escH(s.apellido) + '</td><td>' + escH(s.nombre) +
+                       '</td><td>' + escH(s.dni) + '</td><td>' + escH(s.domicilio) +
+                       '</td><td>' + escH(((s.caracteristica || '') + ' ' + (s.telefono || '')).trim()) + '</td>';
+            }
+            const CABECERA_CAT = '<thead><tr><th>Nº Socio</th><th>Apellido</th><th>Nombre</th><th>DNI</th><th>Domicilio</th><th>Teléfono</th></tr></thead>';
+            let anioBuscado = '';
+
+            // Renderizar Categorías (agrupadas por año de nacimiento, de menor a mayor)
             function renderizarCategorias() {
                 const socios = getSocios();
                 if (socios.length === 0) {
                     categoriasContainer.innerHTML = `<div class="empty-msg">No hay socios para categorizar.</div>`;
                     return;
                 }
-
-                // Agrupar por año (extraer de fechaNac)
                 const grupos = {};
                 socios.forEach(s => {
-                    if (s.fechaNac) {
-                        const año = s.fechaNac.substring(0, 4);
-                        if (!grupos[año]) grupos[año] = [];
-                        grupos[año].push(s);
-                    }
+                    const a = anioDe(s);
+                    if (a) { (grupos[a] = grupos[a] || []).push(s); }
                 });
-
-                const años = Object.keys(grupos).sort((a, b) => a - b); // ascendente
+                let años = Object.keys(grupos).sort((a, b) => a - b);
                 if (años.length === 0) {
                     categoriasContainer.innerHTML = `<div class="empty-msg">No hay socios con fecha de nacimiento registrada.</div>`;
                     return;
                 }
-
+                if (anioBuscado !== '') {
+                    años = años.filter(a => a === anioBuscado);
+                    if (años.length === 0) {
+                        categoriasContainer.innerHTML = `<div class="empty-msg">No hay socios nacidos en ${escH(anioBuscado)}.</div>`;
+                        return;
+                    }
+                }
                 let html = '';
                 años.forEach(año => {
-                    const lista = grupos[año];
-                    html += `<div class="categoria-bloque">`;
-                    html += `<h3>${año}</h3>`;
-                    html += `<div class="table-wrapper"><table>`;
-                    html += `<thead><tr>
-                                <th>Nº Socio</th>
-                                <th>Apellido</th>
-                                <th>Nombre</th>
-                                <th>DNI</th>
-                                <th>Domicilio</th>
-                                <th>Teléfono</th>
-                            </tr></thead><tbody>`;
-                    lista.forEach(s => {
-                        html += `<tr>
-                                    <td>${s.numeroSocio}</td>
-                                    <td>${s.apellido || ''}</td>
-                                    <td>${s.nombre || ''}</td>
-                                    <td>${s.dni || ''}</td>
-                                    <td>${s.domicilio || ''}</td>
-                                    <td>${s.caracteristica || ''} ${s.telefono || ''}</td>
-                                </tr>`;
-                    });
-                    html += `</tbody></table></div></div>`;
+                    html += '<div class="categoria-bloque"><div class="categoria-cabecera"><h3>' + año + '</h3>' +
+                            '<button class="btn btn-sm btn-secondary ficha-anio-btn" data-anio="' + año + '">🗂️ Abrir ficha del año</button></div>' +
+                            '<div class="table-wrapper"><table>' + CABECERA_CAT + '<tbody>';
+                    grupos[año].forEach(s => { html += '<tr>' + celdasSocio(s) + '</tr>'; });
+                    html += '</tbody></table></div></div>';
                 });
                 categoriasContainer.innerHTML = html;
+                categoriasContainer.querySelectorAll('.ficha-anio-btn').forEach(b =>
+                    b.addEventListener('click', function () { abrirFichaAnio(this.getAttribute('data-anio')); }));
             }
+
+            // Ficha de un año en pestaña aparte
+            function abrirFichaAnio(anio) {
+                const lista = getSocios().filter(s => anioDe(s) === anio);
+                const ventana = window.open('', '_blank');
+                if (!ventana) {
+                    mostrarToast('El navegador bloqueó la nueva pestaña. Permita las ventanas emergentes para este sitio.', 'error');
+                    return;
+                }
+                let filas = '';
+                lista.forEach(s => { filas += '<tr>' + celdasSocio(s) + '</tr>'; });
+                ventana.document.open();
+                ventana.document.write(
+                    '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
+                    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+                    '<title>Socios nacidos en ' + anio + '</title><style>' +
+                    "body{font-family:'Segoe UI',Roboto,system-ui,sans-serif;background:#f0f4f8;margin:0;padding:20px;display:flex;justify-content:center}" +
+                    '.card{background:#fff;border-radius:24px;padding:30px 35px;max-width:1000px;width:100%;box-shadow:0 20px 40px rgba(0,20,40,.15)}' +
+                    'h2{color:#1e3a6f;border-bottom:2px solid #dce5ef;padding-bottom:12px;margin:0 0 20px;font-size:2rem}' +
+                    'table{width:100%;border-collapse:collapse;font-size:.95rem}' +
+                    'th{background:#1e3a6f;color:#fff;text-align:left;padding:10px}' +
+                    'td{padding:9px 10px;border-bottom:1px solid #e2e8f0}tr:nth-child(even) td{background:#f7f9fc}' +
+                    '.total{margin-top:12px;color:#4a5568}' +
+                    '.acciones{margin-top:20px;display:flex;gap:10px}' +
+                    'button{flex:1;padding:12px;border:0;border-radius:12px;font-size:1rem;cursor:pointer;background:#1e3a6f;color:#fff}' +
+                    'button.sec{background:#e2e8f0;color:#1e3a6f}' +
+                    '@media print{body{background:#fff;padding:0}.card{box-shadow:none;max-width:none}.acciones{display:none}}' +
+                    '</style></head><body><div class="card"><h2>' + anio + '</h2>' +
+                    '<table>' + CABECERA_CAT + '<tbody>' + filas + '</tbody></table>' +
+                    '<div class="total">Total de socios: ' + lista.length + '</div>' +
+                    '<div class="acciones"><button onclick="window.print()">🖨️ Imprimir</button>' +
+                    '<button class="sec" onclick="window.close()">Cerrar pestaña</button></div></div></body></html>'
+                );
+                ventana.document.close();
+            }
+
+            // Buscador por año (solo números, 4 dígitos)
+            const buscarAnioInput = document.getElementById('buscarAnioInput');
+            buscarAnioInput.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 4); });
+            function ejecutarBusquedaAnio() {
+                const v = buscarAnioInput.value;
+                if (v.length !== 4) { mostrarToast('Ingrese los cuatro dígitos del año (por ejemplo 2008).', 'error'); return; }
+                anioBuscado = v;
+                renderizarCategorias();
+            }
+            document.getElementById('btnBuscarAnio').addEventListener('click', ejecutarBusquedaAnio);
+            document.getElementById('btnLimpiarAnio').addEventListener('click', function () { buscarAnioInput.value = ''; anioBuscado = ''; renderizarCategorias(); });
+            buscarAnioInput.addEventListener('keyup', function (e) { if (e.key === 'Enter') ejecutarBusquedaAnio(); });
 
             // Renderizar Base de Datos (tabla general con botón ver ficha)
             function renderizarBaseDatos() {
@@ -1555,7 +1626,8 @@
 
                 let html = '';
                 campos.forEach(campo => {
-                    const valor = socio[campo.clave] || '';
+                    let valor = socio[campo.clave] || '';
+                    if (campo.clave === 'fechaNac') valor = fmtFecha(valor);
                     html += `<div class="campo-ficha">
                                 <span class="etiqueta">${campo.etiqueta}</span>
                                 <span class="valor">${valor}</span>
@@ -1622,7 +1694,8 @@
                     btn.classList.remove('active');
                 });
                 btnCategorias.classList.add('active');
-                // Renderizar categorías
+                // Renderizar categorías (siempre completas al entrar)
+                anioBuscado = ''; buscarAnioInput.value = '';
                 renderizarCategorias();
             }
 
