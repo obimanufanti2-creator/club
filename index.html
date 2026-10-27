@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Social y Deportivo - Gestión de Socios</title>
+    <style>
+        /* ========== RESET Y BASE (sin cambios) ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        body {
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 20, 40, 0.15);
+            padding: 30px 35px 40px;
+            transition: all 0.2s;
+        }
+
+        header {
+            margin-bottom: 28px;
+            border-bottom: 3px solid #1e3a6f;
+            padding-bottom: 12px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: #1e3a6f;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        header h1 small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #4a6a8b;
+            margin-left: 10px;
+        }
+
+        header h2 {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #2c5282;
+            margin-top: 2px;
+        }
+
+        /* ========== PESTAÑAS (se añaden nuevas sin tocar las existentes) ========== */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #dce5ef;
+            padding-bottom: 0;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #4a6a8b;
+            border-radius: 30px 30px 0 0;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.3px;
+        }
+
+        .tab-btn:hover {
+            background: #e8eef6;
+            color: #1e3a6f;
+        }
+
+        .tab-btn.active {
+            background: #1e3a6f;
+            color: white;
+            box-shadow: 0 -4px 8px rgba(30, 58, 111, 0.15);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fade 0.25s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fade {
+            0% {
+                opacity: 0.5;
+                transform: translateY(6px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== FORMULARIO (sin cambios) ========== */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 24px;
+        }
+
+        .form-group {
+            flex: 1 1 200px;
+            display: flex;
+            flex-direction: column;
+            min-width: 160px;
+        }
+
+        .form-group.full-width {
+            flex: 1 1 100%;
+        }
+
+        .form-group.half {
+            flex: 1 1 calc(50% - 12px);
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1e3a6f;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group label .required {
+            color: #c0392b;
+            margin-left: 2px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 10px 14px;
+            border: 2px solid #dce5ef;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            background: #fafcfe;
+            transition: border 0.2s, box-shadow 0.2s;
+            outline: none;
+            width: 100%;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: #1e3a6f;
+            box-shadow: 0 0 0 3px rgba(30, 58, 111, 0.15);
+            background: white;
+        }
+
+        .form-group input:disabled {
+            background: #edf2f7;
+            color: #2d3748;
+            cursor: not-allowed;
+        }
+
+        .form-group input.error,
+        .form-group textarea.error {
+            border-color: #c0392b;
+            background: #fff5f5;
+        }
+
+        .form-group .error-msg {
+            font-size: 0.78rem;
+            color: #c0392b;
+            margin-top: 4px;
+            min-height: 18px;
+            font-weight: 500;
+        }
+
+        .inline-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .inline-group .form-group {
+            flex: 1 1 0;
+            min-width: 80px;
+        }
+
+        .inline-group .form-group:first-child {
+            flex: 0 0 130px;
+        }
+
+        .inline-group .form-group:last-child {
+            flex: 1 1 0;
+        }
+
+        .char-counter {
+            font-size: 0.8rem;
+            color: #4a6a8b;
+            text-align: right;
+            margin-top: 3px;
+        }
+
+        .char-counter.limit {
+            color: #c0392b;
+            font-weight: 600;
+        }
+
+        /* ========== BOTONES ========== */
+        .btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #1e3a6f;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            background: #14305a;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(30, 58, 111, 0.25);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #e8eef6;
+            color: #1e3a6f;
+        }
+
+        .btn-secondary:hover {
+            background: #d5dfeb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-success {
+            background: #2e7d32;
+        }
+
+        .btn-success:hover {
+            background: #1e5f22;
+            box-shadow: 0 8px 16px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-danger {
+            background: #c0392b;
+        }
+
+        .btn-danger:hover {
+            background: #a93226;
+            box-shadow: 0 8px 16px rgba(192, 57, 43, 0.25);
+        }
+
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            border-radius: 20px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 12px;
+            align-items: center;
+        }
+
+        /* ========== TABLAS GENERALES (para pestañas nuevas) ========== */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #dce5ef;
+            background: #fafcfe;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            min-width: 500px;
+        }
+
+        th {
+            background: #e8eef6;
+            color: #1e3a6f;
+            font-weight: 600;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 2px solid #dce5ef;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #f4f8ff;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 40px 20px;
+            color: #7a8fa6;
+            font-size: 1rem;
+        }
+
+        /* ========== CATEGORÍAS (bloques por año) ========== */
+        .categoria-bloque {
+            margin-bottom: 30px;
+        }
+
+        .categoria-bloque h3 {
+            font-size: 1.5rem;
+            color: #1e3a6f;
+            background: #e8eef6;
+            padding: 8px 18px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .categoria-bloque .table-wrapper {
+            border-radius: 12px;
+        }
+
+        /* ========== MODAL FICHA ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 24px;
+            padding: 30px 35px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: fade 0.25s ease;
+        }
+
+        .modal-card h2 {
+            color: #1e3a6f;
+            border-bottom: 2px solid #dce5ef;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+        }
+
+        .modal-card .campo-ficha {
+            display: flex;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f4f8;
+            font-size: 0.95rem;
+        }
+
+        .modal-card .campo-ficha .etiqueta {
+            font-weight: 600;
+            color: #1e3a6f;
+            width: 140px;
+            flex-shrink: 0;
+        }
+
+        .modal-card .campo-ficha .valor {
+            color: #2d3748;
+        }
+
+        .modal-card .btn-cerrar {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        /* ========== TOAST ========== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1e3a6f;
+            color: white;
+            padding: 16px 28px;
+            border-radius: 40px;
+            font-weight: 600;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+            z-index: 999;
+            pointer-events: none;
+            font-size: 0.95rem;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .toast.success {
+            background: #2e7d32;
+        }
+
+        .toast.error {
+            background: #c0392b;
+        }
+
+        /* ========== RESPONSIVE (ajustes para nuevas tablas) ========== */
+        @media (max-width: 700px) {
+            .container {
+                padding: 20px 16px;
+            }
+
+            header h1 {
+                font-size: 1.6rem;
+                flex-wrap: wrap;
+            }
+
+            .tabs {
+                gap: 4px;
+            }
+
+            .tab-btn {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
+
+            .form-group {
+                flex: 1 1 100%;
+                min-width: unset;
+            }
+
+            .inline-group {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .inline-group .form-group {
+                flex: 1 1 100%;
+                min-width: unset;
+            }
+
+            .inline-group .form-group:first-child {
+                flex: 1 1 100%;
+            }
+
+            .search-box {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box .form-group:last-child {
+                flex: 1 1 auto;
+            }
+
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toast {
+                left: 20px;
+                right: 20px;
+                bottom: 20px;
+                text-align: center;
+                border-radius: 20px;
+            }
+
+            .modal-card {
+                padding: 20px;
+            }
+
+            .modal-card .campo-ficha {
+                flex-direction: column;
+                padding: 10px 0;
+            }
+
+            .modal-card .campo-ficha .etiqueta {
+                width: 100%;
+                margin-bottom: 2px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tab-btn {
+                font-size: 0.8rem;
+                padding: 8px 12px;
+            }
+
+            table {
+                font-size: 0.8rem;
+                min-width: 400px;
+            }
+
+            th,
+            td {
+                padding: 10px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- HEADER -->
+        <header>
+            <h1>
+                ⚽ Club Social y Deportivo
+                <small>Gestión de Socios</small>
+            </h1>
+        </header>
+
+        <!-- PESTAÑAS (se añaden dos nuevas sin modificar las anteriores) -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="tab1">📋 Ingreso de Socios</button>
+            <button class="tab-btn" data-tab="tab2">🔍 Búsqueda y Edición</button>
+            <!-- NUEVAS PESTAÑAS (sin data-tab para no interferir con el código existente) -->
+            <button class="tab-btn" id="tab-btn-categorias">📅 Categorías</button>
+            <button class="tab-btn" id="tab-btn-bd">🗂️ Base de Datos y Fichas</button>
+        </nav>
+
+        <!-- ============================================= -->
+        <!-- PESTAÑA 1: FORMULARIO (sin cambios) -->
+        <!-- ============================================= -->
+        <div class="tab-content active" id="tab1">
+            <form id="formSocio" novalidate>
+
+                <!-- Nº de Socio -->
+                <div class="form-group full-width">
+                    <label for="numeroSocio">Nº de Socio</label>
+                    <input type="text" id="numeroSocio" disabled>
+                    <div class="error-msg"></div>
+                </div>
+
+                <!-- Apellido y Nombre -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="apellido">Apellido <span class="required">*</span></label>
+                        <input type="text" id="apellido" placeholder="Ingrese apellido" required>
+                        <div class="error-msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombre">Nombre <span class="required">*</span></label>
+                        <input type="text" id="nombre" placeholder="Ingrese nombre" required>
+                        <div class="error-msg"></div>
+                    </div>
+                </div>
+
+                <!-- Fecha de Nac. y Edad -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fechaNac">Fecha de Nac. <span class="required">*</span></label>
+                        <input type="date" id="fechaNac" required>
+                        <div class="error-msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edad">Edad</label>
+                        <input type="text" id="edad" disabled>
+                        <div class="error-msg"></div>
+                    </div>
+                </div>
+
+                <!-- DNI -->
+                <div class="form-group full-width">
+                    <label for="dni">DNI <span class="required">*</span></label>
+                    <input type="text" id="dni" placeholder="Ej: 12345678" required>
+                    <div class="error-msg"></div>
+                </div>
+
+                <!-- Domicilio -->
+                <div class="form-group full-width">
+                    <label for="domicilio">Domicilio <span class="required">*</span></label>
+                    <input type="text" id="domicilio" placeholder="Ej: Av. Siempreviva 1234, Piso 2" required>
+                    <div class="error-msg"></div>
+                </div>
+
+                <!-- Característica y Teléfono -->
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="caracteristica">Característica <span class="required">*</span></label>
+                        <input type="text" id="caracteristica" placeholder="Ej: 011" maxlength="4" required>
+                        <div class="error-msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="telefono">Teléfono <span class="required">*</span></label>
+                        <input type="text" id="telefono" placeholder="Ej: 12345678" maxlength="8" required>
+                        <div class="error-msg"></div>
+                    </div>
+                </div>
+
+                <!-- Responsable, Vínculo, DNI Responsable -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="responsable">Responsable</label>
+                        <input type="text" id="responsable" placeholder="Nombre del responsable">
+                        <div class="error-msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="vinculo">Vínculo</label>
+                        <input type="text" id="vinculo" placeholder="Ej: Padre, Madre, Tutor">
+                        <div class="error-msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="dniResponsable">DNI Responsable</label>
+                        <input type="text" id="dniResponsable" placeholder="7 u 8 dígitos">
+                        <div class="error-msg"></div>
+                    </div>
+                </div>
+
+                <!-- Escuela, Grado/Año, Turno -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="escuela">Escuela</label>
+                        <input type="text" id="escuela" placeholder="Nombre de la escuela">
+                        <div class="error-msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="gradoAnio">Grado/Año</label>
+                        <input type="text" id="gradoAnio" placeholder="Ej: 5to A">
+                        <div class="error-msg"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="turno">Turno</label>
+                        <input type="text" id="turno" placeholder="Ej: Mañana, Tarde">
+                        <div class="error-msg"></div>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="form-group full-width">
+                    <label for="observaciones">Observaciones</label>
+                    <textarea id="observaciones" rows="4" maxlength="150" placeholder="Observaciones adicionales (máx 150 caracteres)"></textarea>
+                    <div class="char-counter" id="charCounter">150 caracteres restantes</div>
+                    <div class="error-msg"></div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="actions">
+                    <button type="submit" class="btn" id="btnRegistrar">📌 Registrar Socio</button>
+                    <button type="button" class="btn btn-secondary" id="btnCancelarEdicion" style="display:none;">✖ Cancelar Edición</button>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- PESTAÑA 2: BÚSQUEDA Y EDICIÓN (sin cambios) -->
+        <!-- ============================================= -->
+        <div class="tab-content" id="tab2">
+            <div class="search-box">
+                <div class="form-group">
+                    <label for="buscarInput">Buscar por Apellido, Nombre o Nº de Socio</label>
+                    <input type="text" id="buscarInput" placeholder="Escriba su búsqueda...">
+                </div>
+                <div class="form-group">
+                    <button class="btn" id="btnBuscar">🔎 Buscar</button>
+                </div>
+            </div>
+
+            <div id="resultados">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nº Socio</th>
+                                <th>Apellido</th>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaSocios">
+                            <tr><td colspan="5" class="empty-msg">No hay socios registrados aún.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- NUEVA PESTAÑA 3: CATEGORÍAS -->
+        <!-- ============================================= -->
+        <div class="tab-content" id="tab3">
+            <h2 style="color:#1e3a6f; margin-bottom:20px;">Categorías por Año de Nacimiento</h2>
+            <div id="categorias-container"></div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- NUEVA PESTAÑA 4: BASE DE DATOS Y FICHAS -->
+        <!-- ============================================= -->
+        <div class="tab-content" id="tab4">
+            <h2 style="color:#1e3a6f; margin-bottom:20px;">Base de Datos de Socios</h2>
+            <div class="search-box">
+                <div class="form-group">
+                    <label for="buscarBDInput">Buscar por Apellido, Nombre o Nº de Socio</label>
+                    <input type="text" id="buscarBDInput" placeholder="Escriba su búsqueda...">
+                </div>
+                <div class="form-group">
+                    <button class="btn" id="btnBuscarBD">🔎 Buscar</button>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-secondary" id="btnLimpiarBD">✖ Ver todos</button>
+                </div>
+            </div>
+            <div id="bd-container">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nº Socio</th>
+                                <th>Apellido</th>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Domicilio</th>
+                                <th>Teléfono</th>
+                                <th>Ficha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBD">
+                            <tr><td colspan="7" class="empty-msg">No hay socios registrados.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========== MODAL FICHA (superpuesto) ========== -->
+    <div class="modal-overlay" id="modalFicha">
+        <div class="modal-card">
+            <h2>Ficha del Socio</h2>
+            <div id="ficha-contenido"></div>
+            <button class="btn btn-secondary btn-cerrar" id="btnCerrarModal">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ================================================================ -->
+    <!-- JAVASCRIPT (se añaden las nuevas funcionalidades al final)        -->
+    <!-- ================================================================ -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ---------- CONSTANTES Y REFERENCIAS (sin cambios) ----------
+            const STORAGE_KEY = 'sociosClub';
+            const form = document.getElementById('formSocio');
+            const btnRegistrar = document.getElementById('btnRegistrar');
+            const btnCancelar = document.getElementById('btnCancelarEdicion');
+
+            // Campos
+            const numeroSocio = document.getElementById('numeroSocio');
+            const apellido = document.getElementById('apellido');
+            const nombre = document.getElementById('nombre');
+            const fechaNac = document.getElementById('fechaNac');
+            const edad = document.getElementById('edad');
+            const dni = document.getElementById('dni');
+            const domicilio = document.getElementById('domicilio');
+            const caracteristica = document.getElementById('caracteristica');
+            const telefono = document.getElementById('telefono');
+            const responsable = document.getElementById('responsable');
+            const vinculo = document.getElementById('vinculo');
+            const dniResponsable = document.getElementById('dniResponsable');
+            const escuela = document.getElementById('escuela');
+            const gradoAnio = document.getElementById('gradoAnio');
+            const turno = document.getElementById('turno');
+            const observaciones = document.getElementById('observaciones');
+            const charCounter = document.getElementById('charCounter');
+
+            // Pestañas (las originales)
+            const tabBtns = document.querySelectorAll('.tab-btn[data-tab]');
+            const tabContents = {
+                tab1: document.getElementById('tab1'),
+                tab2: document.getElementById('tab2')
+            };
+
+            // Buscador
+            const buscarInput = document.getElementById('buscarInput');
+            const btnBuscar = document.getElementById('btnBuscar');
+            const tablaSocios = document.getElementById('tablaSocios');
+
+            // Toast
+            const toast = document.getElementById('toast');
+            let toastTimer = null;
+
+            // Estado de edición
+            let editando = null;
+
+            // ---------- FUNCIONES AUXILIARES (sin cambios) ----------
+            // ---- CONEXIÓN CON GOOGLE SHEETS (editar solo la línea API_URL) ----
+            const API_URL = 'https://script.google.com/macros/s/AKfycbxOCH8NS35meuG1pFZrf38_jsHzEO0HeehYaKMDDAJYuX4n5LDHIO_oV9K2aGYCREll/exec';
+            let CLAVE = '', ROL = '', cache = [], consultaBD = '';
+            (function () {
+                const m = location.hash.match(/k=([^&]+)/);
+                try {
+                    if (m) { CLAVE = decodeURIComponent(m[1]); localStorage.setItem('clubKey', CLAVE); history.replaceState(null, '', location.pathname + location.search); }
+                    else CLAVE = localStorage.getItem('clubKey') || '';
+                } catch (e) { if (m) CLAVE = decodeURIComponent(m[1]); }
+            })();
+            async function api(action, extra) {
+                try {
+                    const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ action: action, key: CLAVE }, extra || {})) });
+                    return await r.json();
+                } catch (e) { return { ok: false, error: 'Sin conexión con el servidor' }; }
+            }
+            function getSocios() { return cache; }
+            function guardarSocios() { /* ya no se usa: se guarda en el servidor */ }
+
+            function generarNumeroSocio() {
+                const socios = getSocios();
+                const año = new Date().getFullYear();
+                let maxSec = 0;
+                socios.forEach(s => {
+                    const partes = s.numeroSocio.split('-');
+                    if (partes.length === 2 && partes[0] == año) {
+                        const num = parseInt(partes[1], 10);
+                        if (!isNaN(num) && num > maxSec) maxSec = num;
+                    }
+                });
+                const siguiente = maxSec + 1;
+                const secStr = String(siguiente).padStart(4, '0');
+                return `${año}-${secStr}`;
+            }
+
+            function actualizarNumeroSocio() {
+                if (editando === null) {
+                    numeroSocio.value = generarNumeroSocio();
+                }
+            }
+
+            function calcularEdad(fechaStr) {
+                if (!fechaStr) return '';
+                const hoy = new Date();
+                const nac = new Date(fechaStr + 'T00:00:00');
+                if (isNaN(nac.getTime())) return '';
+                let edadCalc = hoy.getFullYear() - nac.getFullYear();
+                const mes = hoy.getMonth() - nac.getMonth();
+                if (mes < 0 || (mes === 0 && hoy.getDate() < nac.getDate())) {
+                    edadCalc--;
+                }
+                return edadCalc >= 0 ? edadCalc : '';
+            }
+
+            function mostrarToast(mensaje, tipo = 'success') {
+                if (toastTimer) {
+                    clearTimeout(toastTimer);
+                    toast.classList.remove('show', 'success', 'error');
+                }
+                toast.textContent = mensaje;
+                toast.className = 'toast ' + tipo;
+                void toast.offsetWidth;
+                toast.classList.add('show');
+                toastTimer = setTimeout(() => {
+                    toast.classList.remove('show');
+                    toastTimer = null;
+                }, 3500);
+            }
+
+            function limpiarError(campo) {
+                const grupo = campo.closest('.form-group');
+                if (grupo) {
+                    const err = grupo.querySelector('.error-msg');
+                    if (err) err.textContent = '';
+                    campo.classList.remove('error');
+                }
+            }
+
+            function mostrarError(campo, mensaje) {
+                const grupo = campo.closest('.form-group');
+                if (grupo) {
+                    const err = grupo.querySelector('.error-msg');
+                    if (err) err.textContent = mensaje;
+                    campo.classList.add('error');
+                }
+            }
+
+            function validarLetras(campo) {
+                const valor = campo.value.trim();
+                if (valor === '') return true;
+                const regex = /^[a-zA-ZáéíóúüñÑ\s]+$/;
+                if (!regex.test(valor)) {
+                    mostrarError(campo, 'Solo se permiten letras (incluye tildes y eñe).');
+                    return false;
+                }
+                limpiarError(campo);
+                return true;
+            }
+
+            function validarDNI(campo, obligatorio = false) {
+                const valor = campo.value.trim();
+                if (valor === '') {
+                    if (obligatorio) {
+                        mostrarError(campo, 'Este campo es obligatorio.');
+                        return false;
+                    }
+                    limpiarError(campo);
+                    return true;
+                }
+                const regex = /^\d{7,8}$/;
+                if (!regex.test(valor)) {
+                    mostrarError(campo, 'Error, el número ingresado debe contener 7 u 8 dígitos.');
+                    return false;
+                }
+                limpiarError(campo);
+                return true;
+            }
+
+            function validarNumerosConLongitud(campo, maxLen, obligatorio = false) {
+                const valor = campo.value.trim();
+                if (valor === '') {
+                    if (obligatorio) {
+                        mostrarError(campo, 'Este campo es obligatorio.');
+                        return false;
+                    }
+                    limpiarError(campo);
+                    return true;
+                }
+                const regex = /^\d+$/;
+                if (!regex.test(valor)) {
+                    mostrarError(campo, 'Solo se permiten números.');
+                    return false;
+                }
+                if (valor.length > maxLen) {
+                    mostrarError(campo, `Máximo ${maxLen} dígitos.`);
+                    return false;
+                }
+                limpiarError(campo);
+                return true;
+            }
+
+            function validarFecha(campo) {
+                const valor = campo.value;
+                if (!valor) {
+                    mostrarError(campo, 'Seleccione una fecha válida.');
+                    return false;
+                }
+                const fecha = new Date(valor + 'T00:00:00');
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                const min = new Date(1900, 0, 1);
+                if (fecha < min || fecha > hoy) {
+                    mostrarError(campo, 'La fecha debe estar entre 1900 y la fecha actual.');
+                    return false;
+                }
+                limpiarError(campo);
+                return true;
+            }
+
+            // ---------- EVENTOS DE VALIDACIÓN (sin cambios) ----------
+            apellido.addEventListener('blur', function() {
+                if (this.value.trim() !== '') validarLetras(this);
+                else if (this.required) mostrarError(this, 'Este campo es obligatorio.');
+            });
+
+            nombre.addEventListener('blur', function() {
+                if (this.value.trim() !== '') validarLetras(this);
+                else if (this.required) mostrarError(this, 'Este campo es obligatorio.');
+            });
+
+            dni.addEventListener('blur', function() {
+                validarDNI(this, true);
+            });
+
+            domicilio.addEventListener('blur', function() {
+                if (this.value.trim() === '') {
+                    if (this.required) mostrarError(this, 'Este campo es obligatorio.');
+                } else {
+                    limpiarError(this);
+                }
+            });
+
+            caracteristica.addEventListener('blur', function() {
+                validarNumerosConLongitud(this, 4, true);
+            });
+
+            telefono.addEventListener('blur', function() {
+                validarNumerosConLongitud(this, 8, true);
+            });
+
+            responsable.addEventListener('blur', function() {
+                if (this.value.trim() !== '') validarLetras(this);
+                else limpiarError(this);
+            });
+
+            vinculo.addEventListener('blur', function() {
+                if (this.value.trim() !== '') validarLetras(this);
+                else limpiarError(this);
+            });
+
+            dniResponsable.addEventListener('blur', function() {
+                validarDNI(this, false);
+            });
+
+            fechaNac.addEventListener('blur', function() {
+                if (this.value) {
+                    if (validarFecha(this)) {
+                        const edadCalc = calcularEdad(this.value);
+                        edad.value = edadCalc !== '' ? edadCalc : '';
+                    } else {
+                        edad.value = '';
+                    }
+                } else {
+                    limpiarError(this);
+                    edad.value = '';
+                }
+            });
+
+            fechaNac.addEventListener('change', function() {
+                if (this.value) {
+                    if (validarFecha(this)) {
+                        const edadCalc = calcularEdad(this.value);
+                        edad.value = edadCalc !== '' ? edadCalc : '';
+                    } else {
+                        edad.value = '';
+                    }
+                } else {
+                    limpiarError(this);
+                    edad.value = '';
+                }
+            });
+
+            observaciones.addEventListener('input', function() {
+                const restantes = 150 - this.value.length;
+                charCounter.textContent = `${restantes} caracteres restantes`;
+                if (restantes <= 10) {
+                    charCounter.classList.add('limit');
+                } else {
+                    charCounter.classList.remove('limit');
+                }
+                if (this.value.length > 150) {
+                    this.value = this.value.slice(0, 150);
+                }
+            });
+
+            // ---------- VALIDACIÓN GENERAL (sin cambios) ----------
+            function validarFormulario() {
+                let valido = true;
+
+                if (!apellido.value.trim()) {
+                    mostrarError(apellido, 'Este campo es obligatorio.');
+                    valido = false;
+                } else if (!validarLetras(apellido)) valido = false;
+
+                if (!nombre.value.trim()) {
+                    mostrarError(nombre, 'Este campo es obligatorio.');
+                    valido = false;
+                } else if (!validarLetras(nombre)) valido = false;
+
+                if (!fechaNac.value) {
+                    mostrarError(fechaNac, 'Seleccione una fecha válida.');
+                    valido = false;
+                } else if (!validarFecha(fechaNac)) valido = false;
+
+                if (!validarDNI(dni, true)) valido = false;
+
+                if (!domicilio.value.trim()) {
+                    mostrarError(domicilio, 'Este campo es obligatorio.');
+                    valido = false;
+                } else {
+                    limpiarError(domicilio);
+                }
+
+                if (!validarNumerosConLongitud(caracteristica, 4, true)) valido = false;
+                if (!validarNumerosConLongitud(telefono, 8, true)) valido = false;
+
+                if (responsable.value.trim() !== '' && !validarLetras(responsable)) valido = false;
+                if (vinculo.value.trim() !== '' && !validarLetras(vinculo)) valido = false;
+                if (dniResponsable.value.trim() !== '' && !validarDNI(dniResponsable, false)) valido = false;
+
+                return valido;
+            }
+
+            // ---------- GUARDAR / ACTUALIZAR (sin cambios) ----------
+            async function guardarSocio(e) {
+                e.preventDefault();
+
+                if (!validarFormulario()) {
+                    mostrarToast('Corrija los errores en el formulario.', 'error');
+                    return;
+                }
+
+                const socio = {
+                    numeroSocio: numeroSocio.value,
+                    apellido: apellido.value.trim(),
+                    nombre: nombre.value.trim(),
+                    fechaNac: fechaNac.value,
+                    edad: edad.value,
+                    dni: dni.value.trim(),
+                    domicilio: domicilio.value.trim(),
+                    caracteristica: caracteristica.value.trim(),
+                    telefono: telefono.value.trim(),
+                    responsable: responsable.value.trim(),
+                    vinculo: vinculo.value.trim(),
+                    dniResponsable: dniResponsable.value.trim(),
+                    escuela: escuela.value.trim(),
+                    gradoAnio: gradoAnio.value.trim(),
+                    turno: turno.value.trim(),
+                    observaciones: observaciones.value.trim()
+                };
+
+                let socios = getSocios();
+
+                if (editando !== null) {
+                    const index = socios.findIndex(s => s.numeroSocio === editando);
+                    if (index !== -1) {
+                        const r = await api('update', { socio: socio });
+                        if (!r.ok) { mostrarToast(r.error, 'error'); return; }
+                        socios[index] = socio;
+                        mostrarToast(`Socio ${editando} actualizado correctamente.`, 'success');
+                    } else {
+                        mostrarToast('Error: el socio a actualizar no existe.', 'error');
+                        return;
+                    }
+                } else {
+                    const r = await api('create', { socio: socio });
+                    if (!r.ok) { mostrarToast(r.error, 'error'); return; }
+                    socio.numeroSocio = r.numeroSocio;
+                    socios.push(socio);
+                    mostrarToast(`Socio ${socio.numeroSocio} registrado con éxito.`, 'success');
+                }
+
+                resetearFormulario();
+                actualizarNumeroSocio();
+
+                if (tabContents.tab2.style.display !== 'none') {
+                    buscarSocios();
+                }
+            }
+
+            // ---------- RESETEAR (sin cambios) ----------
+            function resetearFormulario() {
+                form.reset();
+                edad.value = '';
+                editando = null;
+                btnRegistrar.textContent = '📌 Registrar Socio';
+                btnCancelar.style.display = 'none';
+                document.querySelectorAll('.form-group .error-msg').forEach(el => el.textContent = '');
+                document.querySelectorAll('.form-group input, .form-group textarea').forEach(el => el.classList.remove('error'));
+                charCounter.textContent = '150 caracteres restantes';
+                charCounter.classList.remove('limit');
+                actualizarNumeroSocio();
+            }
+
+            // ---------- CARGAR PARA EDICIÓN (sin cambios) ----------
+            function cargarSocioParaEditar(numero) {
+                const socios = getSocios();
+                const socio = socios.find(s => s.numeroSocio === numero);
+                if (!socio) {
+                    mostrarToast('Socio no encontrado.', 'error');
+                    return;
+                }
+
+                numeroSocio.value = socio.numeroSocio;
+                apellido.value = socio.apellido || '';
+                nombre.value = socio.nombre || '';
+                fechaNac.value = socio.fechaNac || '';
+                edad.value = socio.edad || '';
+                dni.value = socio.dni || '';
+                domicilio.value = socio.domicilio || '';
+                caracteristica.value = socio.caracteristica || '';
+                telefono.value = socio.telefono || '';
+                responsable.value = socio.responsable || '';
+                vinculo.value = socio.vinculo || '';
+                dniResponsable.value = socio.dniResponsable || '';
+                escuela.value = socio.escuela || '';
+                gradoAnio.value = socio.gradoAnio || '';
+                turno.value = socio.turno || '';
+                observaciones.value = socio.observaciones || '';
+
+                const restantes = 150 - observaciones.value.length;
+                charCounter.textContent = `${restantes} caracteres restantes`;
+                if (restantes <= 10) charCounter.classList.add('limit');
+                else charCounter.classList.remove('limit');
+
+                editando = socio.numeroSocio;
+                btnRegistrar.textContent = '🔄 Actualizar Socio';
+                btnCancelar.style.display = 'inline-flex';
+
+                document.querySelectorAll('.form-group .error-msg').forEach(el => el.textContent = '');
+                document.querySelectorAll('.form-group input, .form-group textarea').forEach(el => el.classList.remove('error'));
+
+                cambiarPestana('tab1');
+                mostrarToast(`Editando socio ${socio.numeroSocio}`, 'success');
+            }
+
+            function cancelarEdicion() {
+                if (editando !== null) {
+                    resetearFormulario();
+                    mostrarToast('Edición cancelada.', '');
+                }
+            }
+
+            // ---------- BÚSQUEDA (sin cambios) ----------
+            function buscarSocios() {
+                const query = buscarInput.value.trim().toLowerCase();
+                let socios = getSocios();
+
+                if (query !== '') {
+                    socios = socios.filter(s =>
+                        s.apellido.toLowerCase().includes(query) ||
+                        s.nombre.toLowerCase().includes(query) ||
+                        s.numeroSocio.toLowerCase().includes(query)
+                    );
+                }
+
+                renderizarTabla(socios);
+            }
+
+            function renderizarTabla(socios) {
+                const tbody = tablaSocios;
+                if (socios.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">No se encontraron socios.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                socios.forEach(s => {
+                    html += `
+                        <tr>
+                            <td><strong>${s.numeroSocio}</strong></td>
+                            <td>${s.apellido || ''}</td>
+                            <td>${s.nombre || ''}</td>
+                            <td>${s.dni || ''}</td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary" data-numero="${s.numeroSocio}">✎ Editar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+
+                tbody.querySelectorAll('button[data-numero]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const num = this.getAttribute('data-numero');
+                        cargarSocioParaEditar(num);
+                    });
+                });
+            }
+
+            // ---------- CAMBIAR PESTAÑA (CORREGIDO) ----------
+            function cambiarPestana(id) {
+                // 1. Ocultar TODOS los tab-content (incluyendo los nuevos)
+                document.querySelectorAll('.tab-content').forEach(el => {
+                    el.classList.remove('active');
+                    el.style.display = 'none';
+                });
+
+                // 2. Mostrar solo el seleccionado
+                const target = document.getElementById(id);
+                if (target) {
+                    target.classList.add('active');
+                    target.style.display = 'block';
+                }
+
+                // 3. Actualizar TODOS los botones de pestaña
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    // Activar el botón que coincida con data-tab o id
+                    const tabId = btn.getAttribute('data-tab');
+                    if (tabId === id) {
+                        btn.classList.add('active');
+                    }
+                    // Para los botones sin data-tab (nuevos), los desactivamos siempre
+                    // porque solo se activan desde sus propias funciones
+                });
+
+                // 4. Lógica adicional específica (sin cambios)
+                if (id === 'tab2') {
+                    buscarSocios();
+                }
+                if (id === 'tab1' && editando === null) {
+                    actualizarNumeroSocio();
+                }
+            }
+
+            // ---------- INICIALIZAR (sin cambios) ----------
+            function inicializar() {
+                const hoy = new Date();
+                const hoyStr = hoy.toISOString().split('T')[0];
+                fechaNac.setAttribute('max', hoyStr);
+                fechaNac.setAttribute('min', '1900-01-01');
+
+                actualizarNumeroSocio();
+                buscarSocios();
+
+                tabBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const tabId = this.getAttribute('data-tab');
+                        cambiarPestana(tabId);
+                    });
+                });
+
+                form.addEventListener('submit', guardarSocio);
+                btnCancelar.addEventListener('click', cancelarEdicion);
+                btnBuscar.addEventListener('click', buscarSocios);
+                buscarInput.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') {
+                        buscarSocios();
+                    }
+                });
+
+                document.querySelectorAll('input, textarea').forEach(campo => {
+                    campo.addEventListener('input', function() {
+                        limpiarError(this);
+                    });
+                });
+
+                // Asegurar que solo la pestaña 1 esté visible al inicio
+                // (ya que tiene clase 'active' y display block por defecto, pero ocultamos las demás)
+                document.querySelectorAll('.tab-content').forEach(el => {
+                    if (el.id !== 'tab1') {
+                        el.classList.remove('active');
+                        el.style.display = 'none';
+                    } else {
+                        el.classList.add('active');
+                        el.style.display = 'block';
+                    }
+                });
+                // Activar solo el botón de tab1
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.getAttribute('data-tab') === 'tab1') {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            // ---------- ARRANQUE CON ROLES ----------
+            async function recargar() {
+                const l = await api('list');
+                if (l.ok) { cache = l.socios; if (tab4.style.display === 'block') renderizarBaseDatos(); }
+            }
+            async function arrancar() {
+                const w = await api('whoami');
+                if (!w.ok) { document.body.innerHTML = '<p style="padding:40px;font:20px sans-serif">🔒 Enlace no válido o sin conexión. Pida el enlace correcto al administrador.</p>'; return; }
+                ROL = w.rol;
+                const l = await api('list'); if (l.ok) cache = l.socios;
+                inicializar();
+                if (ROL === 'LECTOR') {
+                    document.querySelector('[data-tab="tab1"]').remove();
+                    document.querySelector('[data-tab="tab2"]').remove();
+                    document.getElementById('tab1').remove();
+                    document.getElementById('tab2').remove();
+                    cambiarATab3();
+                }
+                setInterval(function () { if (editando === null) recargar(); }, 30000);
+                if (ROL === 'ADMIN') window.importarSocios = async function (lista) { const r = await api('import', { socios: lista }); console.log(r); alert(r.ok ? 'Importados: ' + r.n : r.error); };
+            }
+            arrancar();
+
+            // ================================================================
+            //  NUEVO CÓDIGO ADITIVO: PESTAÑAS 3 Y 4
+            //  (no modifica ninguna línea de lo anterior)
+            // ================================================================
+
+            // Referencias a los nuevos contenedores
+            const tab3 = document.getElementById('tab3');
+            const tab4 = document.getElementById('tab4');
+            const categoriasContainer = document.getElementById('categorias-container');
+            const tablaBD = document.getElementById('tablaBD');
+            const modalOverlay = document.getElementById('modalFicha');
+            const fichaContenido = document.getElementById('ficha-contenido');
+            const btnCerrarModal = document.getElementById('btnCerrarModal');
+
+            // Nuevos botones de pestaña (sin data-tab)
+            const btnCategorias = document.getElementById('tab-btn-categorias');
+            const btnBD = document.getElementById('tab-btn-bd');
+
+            // --- Funciones de renderizado ---
+
+            // Renderizar Categorías (agrupadas por año de nacimiento)
+            function renderizarCategorias() {
+                const socios = getSocios();
+                if (socios.length === 0) {
+                    categoriasContainer.innerHTML = `<div class="empty-msg">No hay socios para categorizar.</div>`;
+                    return;
+                }
+
+                // Agrupar por año (extraer de fechaNac)
+                const grupos = {};
+                socios.forEach(s => {
+                    if (s.fechaNac) {
+                        const año = s.fechaNac.substring(0, 4);
+                        if (!grupos[año]) grupos[año] = [];
+                        grupos[año].push(s);
+                    }
+                });
+
+                const años = Object.keys(grupos).sort((a, b) => a - b); // ascendente
+                if (años.length === 0) {
+                    categoriasContainer.innerHTML = `<div class="empty-msg">No hay socios con fecha de nacimiento registrada.</div>`;
+                    return;
+                }
+
+                let html = '';
+                años.forEach(año => {
+                    const lista = grupos[año];
+                    html += `<div class="categoria-bloque">`;
+                    html += `<h3>${año}</h3>`;
+                    html += `<div class="table-wrapper"><table>`;
+                    html += `<thead><tr>
+                                <th>Nº Socio</th>
+                                <th>Apellido</th>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Domicilio</th>
+                                <th>Teléfono</th>
+                            </tr></thead><tbody>`;
+                    lista.forEach(s => {
+                        html += `<tr>
+                                    <td>${s.numeroSocio}</td>
+                                    <td>${s.apellido || ''}</td>
+                                    <td>${s.nombre || ''}</td>
+                                    <td>${s.dni || ''}</td>
+                                    <td>${s.domicilio || ''}</td>
+                                    <td>${s.caracteristica || ''} ${s.telefono || ''}</td>
+                                </tr>`;
+                    });
+                    html += `</tbody></table></div></div>`;
+                });
+                categoriasContainer.innerHTML = html;
+            }
+
+            // Renderizar Base de Datos (tabla general con botón ver ficha)
+            function renderizarBaseDatos() {
+                const q = consultaBD.trim().toLowerCase();
+                let socios = getSocios();
+                if (q !== '') {
+                    socios = socios.filter(s =>
+                        (s.apellido || '').toLowerCase().includes(q) ||
+                        (s.nombre || '').toLowerCase().includes(q) ||
+                        (s.numeroSocio || '').toLowerCase().includes(q)
+                    );
+                    if (socios.length === 0) {
+                        tablaBD.innerHTML = `<tr><td colspan="7" class="empty-msg">No se encontraron socios para esa búsqueda.</td></tr>`;
+                        return;
+                    }
+                }
+                const tbody = tablaBD;
+                if (socios.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="empty-msg">No hay socios registrados.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                socios.forEach(s => {
+                    html += `<tr>
+                                <td>${s.numeroSocio}</td>
+                                <td>${s.apellido || ''}</td>
+                                <td>${s.nombre || ''}</td>
+                                <td>${s.dni || ''}</td>
+                                <td>${s.domicilio || ''}</td>
+                                <td>${s.caracteristica || ''} ${s.telefono || ''}</td>
+                                <td><button class="btn btn-sm btn-secondary ver-ficha-btn" data-numero="${s.numeroSocio}">ver ficha</button></td>
+                            </tr>`;
+                });
+                tbody.innerHTML = html;
+
+                // Asignar evento a los botones "ver ficha"
+                tbody.querySelectorAll('.ver-ficha-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const num = this.getAttribute('data-numero');
+                        mostrarFicha(num);
+                    });
+                });
+            }
+
+            // Mostrar modal con ficha completa del socio
+            function mostrarFicha(numeroSocio) {
+                const socios = getSocios();
+                const socio = socios.find(s => s.numeroSocio === numeroSocio);
+                if (!socio) {
+                    mostrarToast('Socio no encontrado.', 'error');
+                    return;
+                }
+
+                // Definir el orden exacto según la pestaña de ingreso
+                const campos = [
+                    { etiqueta: 'Nº de Socio', clave: 'numeroSocio' },
+                    { etiqueta: 'Apellido', clave: 'apellido' },
+                    { etiqueta: 'Nombre', clave: 'nombre' },
+                    { etiqueta: 'Fecha de Nac.', clave: 'fechaNac' },
+                    { etiqueta: 'Edad', clave: 'edad' },
+                    { etiqueta: 'DNI', clave: 'dni' },
+                    { etiqueta: 'Domicilio', clave: 'domicilio' },
+                    { etiqueta: 'Característica', clave: 'caracteristica' },
+                    { etiqueta: 'Teléfono', clave: 'telefono' },
+                    { etiqueta: 'Responsable', clave: 'responsable' },
+                    { etiqueta: 'Vínculo', clave: 'vinculo' },
+                    { etiqueta: 'DNI Responsable', clave: 'dniResponsable' },
+                    { etiqueta: 'Escuela', clave: 'escuela' },
+                    { etiqueta: 'Grado/Año', clave: 'gradoAnio' },
+                    { etiqueta: 'Turno', clave: 'turno' },
+                    { etiqueta: 'Observaciones', clave: 'observaciones' }
+                ];
+
+                let html = '';
+                campos.forEach(campo => {
+                    const valor = socio[campo.clave] || '';
+                    html += `<div class="campo-ficha">
+                                <span class="etiqueta">${campo.etiqueta}</span>
+                                <span class="valor">${valor}</span>
+                            </div>`;
+                });
+
+                // Abrir la ficha en una pestaña aparte del navegador
+                const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                const titulo = 'Ficha ' + (socio.apellido || '') + ' ' + (socio.nombre || '') + ' - ' + socio.numeroSocio;
+                const ventana = window.open('', '_blank');
+                if (!ventana) {
+                    mostrarToast('El navegador bloqueó la nueva pestaña. Permita las ventanas emergentes para este sitio.', 'error');
+                    return;
+                }
+                ventana.document.open();
+                ventana.document.write(
+                    '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
+                    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+                    '<title>' + esc(titulo) + '</title><style>' +
+                    "body{font-family:'Segoe UI',Roboto,system-ui,sans-serif;background:#f0f4f8;margin:0;padding:20px;display:flex;justify-content:center}" +
+                    '.card{background:#fff;border-radius:24px;padding:30px 35px;max-width:700px;width:100%;box-shadow:0 20px 40px rgba(0,20,40,.15)}' +
+                    'h2{color:#1e3a6f;border-bottom:2px solid #dce5ef;padding-bottom:12px;margin:0 0 20px;font-size:1.6rem}' +
+                    '.campo-ficha{display:flex;padding:6px 0;border-bottom:1px solid #f0f4f8;font-size:.95rem}' +
+                    '.etiqueta{font-weight:600;color:#1e3a6f;width:140px;flex-shrink:0}.valor{color:#2d3748;word-break:break-word}' +
+                    '.acciones{margin-top:20px;display:flex;gap:10px}' +
+                    'button{flex:1;padding:12px;border:0;border-radius:12px;font-size:1rem;cursor:pointer;background:#1e3a6f;color:#fff}' +
+                    'button.sec{background:#e2e8f0;color:#1e3a6f}' +
+                    '@media print{body{background:#fff;padding:0}.card{box-shadow:none}.acciones{display:none}}' +
+                    '</style></head><body><div class="card"><h2>Ficha del Socio</h2>' +
+                    html.replace(/<span class="valor">([\s\S]*?)<\/span>/g, function (m, v) { return '<span class="valor">' + esc(v) + '</span>'; }) +
+                    '<div class="acciones"><button onclick="window.print()">🖨️ Imprimir</button>' +
+                    '<button class="sec" onclick="window.close()">Cerrar pestaña</button></div></div></body></html>'
+                );
+                ventana.document.close();
+            }
+
+            // Cerrar modal
+            function cerrarModal() {
+                modalOverlay.classList.remove('show');
+            }
+
+            // Cerrar modal al hacer clic en el overlay (fuera del card)
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    cerrarModal();
+                }
+            });
+
+            btnCerrarModal.addEventListener('click', cerrarModal);
+
+            // --- Funciones para cambiar a las nuevas pestañas (aditivo) ---
+
+            function cambiarATab3() {
+                // Ocultar todos los tab-content
+                document.querySelectorAll('.tab-content').forEach(el => {
+                    el.classList.remove('active');
+                    el.style.display = 'none';
+                });
+                // Mostrar tab3
+                tab3.classList.add('active');
+                tab3.style.display = 'block';
+                // Actualizar clases de botones (desactivar todos, activar el de categorías)
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                btnCategorias.classList.add('active');
+                // Renderizar categorías
+                renderizarCategorias();
+            }
+
+            function cambiarATab4() {
+                document.querySelectorAll('.tab-content').forEach(el => {
+                    el.classList.remove('active');
+                    el.style.display = 'none';
+                });
+                tab4.classList.add('active');
+                tab4.style.display = 'block';
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                btnBD.classList.add('active');
+                consultaBD = ''; document.getElementById('buscarBDInput').value = '';
+                renderizarBaseDatos();
+            }
+
+            // Asignar eventos a los nuevos botones
+            btnCategorias.addEventListener('click', cambiarATab3);
+            const buscarBDInput = document.getElementById('buscarBDInput');
+            function ejecutarBusquedaBD() { consultaBD = buscarBDInput.value; renderizarBaseDatos(); }
+            document.getElementById('btnBuscarBD').addEventListener('click', ejecutarBusquedaBD);
+            document.getElementById('btnLimpiarBD').addEventListener('click', function () { buscarBDInput.value = ''; ejecutarBusquedaBD(); });
+            buscarBDInput.addEventListener('keyup', function (e) { if (e.key === 'Enter') ejecutarBusquedaBD(); });
+            btnBD.addEventListener('click', cambiarATab4);
+
+            // Asegurar que al cargar la página, la pestaña activa sea la 1 (ya está)
+            // Si se recarga y la pestaña activa era una nueva, no se pierde porque no se guarda estado.
+            // Pero si el usuario quiere volver a la pestaña 1, los botones originales funcionan.
+
+            // También, cuando se modifica un socio desde la pestaña 1, al cambiar a pestañas 3 o 4 se refrescarán.
+            // No es necesario hacer nada adicional porque las funciones de renderizado leen siempre de localStorage.
+
+            console.log('Nuevas pestañas añadidas correctamente (Categorías y Base de Datos).');
+
+        })();
+    </script>
+
+</body>
+</html>
