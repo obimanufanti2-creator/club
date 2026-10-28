@@ -254,6 +254,13 @@
             transform: translateY(0);
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .btn-secondary {
             background: #e8eef6;
             color: #1e3a6f;
@@ -569,13 +576,14 @@
             </h1>
         </header>
 
-        <!-- PESTAÑAS (se añaden dos nuevas sin modificar las anteriores) -->
+        <!-- PESTAÑAS -->
         <nav class="tabs">
             <button class="tab-btn active" data-tab="tab1">📋 Ingreso de Socios</button>
             <button class="tab-btn" data-tab="tab2">🔍 Búsqueda y Edición</button>
-            <!-- NUEVAS PESTAÑAS (sin data-tab para no interferir con el código existente) -->
             <button class="tab-btn" id="tab-btn-categorias">📅 Categorías</button>
             <button class="tab-btn" id="tab-btn-bd">🗂️ Base de Datos y Fichas</button>
+            <!-- NUEVA: Libro Diario (oculta por defecto, se muestra según el rol) -->
+            <button class="tab-btn" id="tab-btn-diario" style="display:none;">📒 Libro Diario</button>
         </nav>
 
         <!-- ============================================= -->
@@ -792,6 +800,84 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- NUEVA PESTAÑA 5: LIBRO DIARIO -->
+        <!-- ============================================= -->
+        <div class="tab-content" id="tab5">
+            <h2 style="color:#1e3a6f; margin-bottom:20px;">Libro Diario Contable</h2>
+
+            <!-- Cabecera del asiento -->
+            <div class="form-row" style="margin-bottom:16px;">
+                <div class="form-group" style="flex:0 0 160px;">
+                    <label for="diarioFecha">Fecha <span class="required">*</span></label>
+                    <input type="date" id="diarioFecha">
+                </div>
+                <div class="form-group" style="flex:0 0 120px;">
+                    <label for="diarioNumero">Nº Asiento</label>
+                    <input type="text" id="diarioNumero" disabled placeholder="Auto">
+                </div>
+            </div>
+
+            <!-- Grid de líneas -->
+            <div class="table-wrapper" style="margin-bottom:12px;">
+                <table id="tablaDiario">
+                    <thead>
+                        <tr>
+                            <th style="width:100px;">Código</th>
+                            <th style="width:180px;">Cuenta</th>
+                            <th>Glosa <span class="required">*</span></th>
+                            <th style="width:110px;">Debe</th>
+                            <th style="width:110px;">Haber</th>
+                            <th style="width:50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="diarioLineas">
+                        <!-- Filas dinámicas -->
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:#e8eef6; font-weight:700;">
+                            <td colspan="3" style="text-align:right;">Totales:</td>
+                            <td id="totalDebe" style="color:#1e3a6f;">0,00</td>
+                            <td id="totalHaber" style="color:#1e3a6f;">0,00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Indicador de cuadre -->
+            <div id="diarioEstado" style="padding:10px 16px; border-radius:12px; margin-bottom:16px; font-weight:600; text-align:center; background:#edf2f7; color:#4a6a8b;">
+                Complete las líneas del asiento
+            </div>
+
+            <!-- Acciones -->
+            <div class="actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnAgregarLinea">+ Agregar línea</button>
+                <button type="button" class="btn btn-success" id="btnGuardarAsiento">💾 Guardar Asiento</button>
+            </div>
+
+            <!-- Últimos asientos -->
+            <h3 style="color:#1e3a6f; margin-top:30px; margin-bottom:12px;">Últimos asientos registrados</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nº</th>
+                            <th>Código</th>
+                            <th>Cuenta</th>
+                            <th>Glosa</th>
+                            <th>Debe</th>
+                            <th>Haber</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaUltimosAsientos">
+                        <tr><td colspan="7" class="empty-msg">Sin asientos registrados.</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -1329,13 +1415,10 @@
                 // 3. Actualizar TODOS los botones de pestaña
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.classList.remove('active');
-                    // Activar el botón que coincida con data-tab o id
                     const tabId = btn.getAttribute('data-tab');
                     if (tabId === id) {
                         btn.classList.add('active');
                     }
-                    // Para los botones sin data-tab (nuevos), los desactivamos siempre
-                    // porque solo se activan desde sus propias funciones
                 });
 
                 // 4. Lógica adicional específica (sin cambios)
@@ -1379,8 +1462,6 @@
                     });
                 });
 
-                // Asegurar que solo la pestaña 1 esté visible al inicio
-                // (ya que tiene clase 'active' y display block por defecto, pero ocultamos las demás)
                 document.querySelectorAll('.tab-content').forEach(el => {
                     if (el.id !== 'tab1') {
                         el.classList.remove('active');
@@ -1390,7 +1471,6 @@
                         el.style.display = 'block';
                     }
                 });
-                // Activar solo el botón de tab1
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.classList.remove('active');
                     if (btn.getAttribute('data-tab') === 'tab1') {
@@ -1400,7 +1480,6 @@
             }
 
             // ---------- ARRANQUE CON ROLES ----------
-            // La edad se recalcula siempre con la fecha de hoy
             function conEdadActual(lista) {
                 lista.forEach(function (s) {
                     const e = calcularEdad(s.fechaNac);
@@ -1410,7 +1489,12 @@
             }
             async function recargar() {
                 const l = await api('list');
-                if (l.ok) { cache = conEdadActual(l.socios); if (tab4.style.display === 'block') renderizarBaseDatos(); if (tab3.style.display === 'block') renderizarCategorias(); }
+                if (l.ok) {
+                    cache = conEdadActual(l.socios);
+                    if (tab4.style.display === 'block') renderizarBaseDatos();
+                    if (tab3.style.display === 'block') renderizarCategorias();
+                    if (tab5 && tab5.style.display === 'block') initDiario();
+                }
             }
             async function arrancar() {
                 const w = await api('whoami');
@@ -1425,6 +1509,23 @@
                     document.getElementById('tab2').remove();
                     cambiarATab3();
                 }
+                // NUEVO: TESORERA hereda permisos de vista de LECTOR + Libro Diario
+                if (ROL === 'TESORERA') {
+                    const btnTab1 = document.querySelector('[data-tab="tab1"]');
+                    const btnTab2 = document.querySelector('[data-tab="tab2"]');
+                    if (btnTab1) btnTab1.remove();
+                    if (btnTab2) btnTab2.remove();
+                    const contentTab1 = document.getElementById('tab1');
+                    const contentTab2 = document.getElementById('tab2');
+                    if (contentTab1) contentTab1.remove();
+                    if (contentTab2) contentTab2.remove();
+                    document.getElementById('tab-btn-diario').style.display = 'inline-flex';
+                    cambiarATab3();
+                }
+                // ADMIN también ve el Libro Diario
+                if (ROL === 'ADMIN') {
+                    document.getElementById('tab-btn-diario').style.display = 'inline-flex';
+                }
                 setInterval(function () { if (editando === null) recargar(); }, 30000);
                 if (ROL === 'ADMIN') window.importarSocios = async function (lista) { const r = await api('import', { socios: lista }); console.log(r); alert(r.ok ? 'Importados: ' + r.n : r.error); };
             }
@@ -1435,7 +1536,6 @@
             //  (no modifica ninguna línea de lo anterior)
             // ================================================================
 
-            // Referencias a los nuevos contenedores
             const tab3 = document.getElementById('tab3');
             const tab4 = document.getElementById('tab4');
             const categoriasContainer = document.getElementById('categorias-container');
@@ -1444,15 +1544,10 @@
             const fichaContenido = document.getElementById('ficha-contenido');
             const btnCerrarModal = document.getElementById('btnCerrarModal');
 
-            // Nuevos botones de pestaña (sin data-tab)
             const btnCategorias = document.getElementById('tab-btn-categorias');
             const btnBD = document.getElementById('tab-btn-bd');
 
-            // --- Funciones de renderizado ---
-
-            // ---- Utilidades ----
             const escH = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-            // aaaa-mm-dd  ->  dd/mm/aaaa
             function fmtFecha(f) {
                 const m = String(f || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
                 return m ? m[3] + '/' + m[2] + '/' + m[1] : (f || '');
@@ -1466,7 +1561,6 @@
             const CABECERA_CAT = '<thead><tr><th>Nº Socio</th><th>Apellido</th><th>Nombre</th><th>DNI</th><th>Domicilio</th><th>Teléfono</th></tr></thead>';
             let anioBuscado = '';
 
-            // Renderizar Categorías (agrupadas por año de nacimiento, de menor a mayor)
             function renderizarCategorias() {
                 const socios = getSocios();
                 if (socios.length === 0) {
@@ -1503,7 +1597,6 @@
                     b.addEventListener('click', function () { abrirFichaAnio(this.getAttribute('data-anio')); }));
             }
 
-            // Ficha de un año en pestaña aparte
             function abrirFichaAnio(anio) {
                 const lista = getSocios().filter(s => anioDe(s) === anio);
                 const ventana = window.open('', '_blank');
@@ -1538,7 +1631,6 @@
                 ventana.document.close();
             }
 
-            // Buscador por año (solo números, 4 dígitos)
             const buscarAnioInput = document.getElementById('buscarAnioInput');
             buscarAnioInput.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 4); });
             function ejecutarBusquedaAnio() {
@@ -1551,7 +1643,6 @@
             document.getElementById('btnLimpiarAnio').addEventListener('click', function () { buscarAnioInput.value = ''; anioBuscado = ''; renderizarCategorias(); });
             buscarAnioInput.addEventListener('keyup', function (e) { if (e.key === 'Enter') ejecutarBusquedaAnio(); });
 
-            // Renderizar Base de Datos (tabla general con botón ver ficha)
             function renderizarBaseDatos() {
                 const q = consultaBD.trim().toLowerCase();
                 let socios = getSocios();
@@ -1586,7 +1677,6 @@
                 });
                 tbody.innerHTML = html;
 
-                // Asignar evento a los botones "ver ficha"
                 tbody.querySelectorAll('.ver-ficha-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const num = this.getAttribute('data-numero');
@@ -1595,7 +1685,6 @@
                 });
             }
 
-            // Mostrar modal con ficha completa del socio
             function mostrarFicha(numeroSocio) {
                 const socios = getSocios();
                 const socio = socios.find(s => s.numeroSocio === numeroSocio);
@@ -1604,7 +1693,6 @@
                     return;
                 }
 
-                // Definir el orden exacto según la pestaña de ingreso
                 const campos = [
                     { etiqueta: 'Nº de Socio', clave: 'numeroSocio' },
                     { etiqueta: 'Apellido', clave: 'apellido' },
@@ -1634,7 +1722,6 @@
                             </div>`;
                 });
 
-                // Abrir la ficha en una pestaña aparte del navegador
                 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                 const titulo = 'Ficha ' + (socio.apellido || '') + ' ' + (socio.nombre || '') + ' - ' + socio.numeroSocio;
                 const ventana = window.open('', '_blank');
@@ -1664,12 +1751,10 @@
                 ventana.document.close();
             }
 
-            // Cerrar modal
             function cerrarModal() {
                 modalOverlay.classList.remove('show');
             }
 
-            // Cerrar modal al hacer clic en el overlay (fuera del card)
             modalOverlay.addEventListener('click', function(e) {
                 if (e.target === this) {
                     cerrarModal();
@@ -1678,23 +1763,17 @@
 
             btnCerrarModal.addEventListener('click', cerrarModal);
 
-            // --- Funciones para cambiar a las nuevas pestañas (aditivo) ---
-
             function cambiarATab3() {
-                // Ocultar todos los tab-content
                 document.querySelectorAll('.tab-content').forEach(el => {
                     el.classList.remove('active');
                     el.style.display = 'none';
                 });
-                // Mostrar tab3
                 tab3.classList.add('active');
                 tab3.style.display = 'block';
-                // Actualizar clases de botones (desactivar todos, activar el de categorías)
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.classList.remove('active');
                 });
                 btnCategorias.classList.add('active');
-                // Renderizar categorías (siempre completas al entrar)
                 anioBuscado = ''; buscarAnioInput.value = '';
                 renderizarCategorias();
             }
@@ -1714,7 +1793,6 @@
                 renderizarBaseDatos();
             }
 
-            // Asignar eventos a los nuevos botones
             btnCategorias.addEventListener('click', cambiarATab3);
             const buscarBDInput = document.getElementById('buscarBDInput');
             function ejecutarBusquedaBD() { consultaBD = buscarBDInput.value; renderizarBaseDatos(); }
@@ -1723,14 +1801,239 @@
             buscarBDInput.addEventListener('keyup', function (e) { if (e.key === 'Enter') ejecutarBusquedaBD(); });
             btnBD.addEventListener('click', cambiarATab4);
 
-            // Asegurar que al cargar la página, la pestaña activa sea la 1 (ya está)
-            // Si se recarga y la pestaña activa era una nueva, no se pierde porque no se guarda estado.
-            // Pero si el usuario quiere volver a la pestaña 1, los botones originales funcionan.
-
-            // También, cuando se modifica un socio desde la pestaña 1, al cambiar a pestañas 3 o 4 se refrescarán.
-            // No es necesario hacer nada adicional porque las funciones de renderizado leen siempre de localStorage.
-
             console.log('Nuevas pestañas añadidas correctamente (Categorías y Base de Datos).');
+
+            // ================================================================
+            //  NUEVO: LIBRO DIARIO (aditivo, no modifica lo anterior)
+            // ================================================================
+
+            const tab5 = document.getElementById('tab5');
+            const btnDiario = document.getElementById('tab-btn-diario');
+            const diarioFecha = document.getElementById('diarioFecha');
+            const diarioNumero = document.getElementById('diarioNumero');
+            const diarioLineas = document.getElementById('diarioLineas');
+            const totalDebeEl = document.getElementById('totalDebe');
+            const totalHaberEl = document.getElementById('totalHaber');
+            const diarioEstado = document.getElementById('diarioEstado');
+            const btnAgregarLinea = document.getElementById('btnAgregarLinea');
+            const btnGuardarAsiento = document.getElementById('btnGuardarAsiento');
+            const tablaUltimosAsientos = document.getElementById('tablaUltimosAsientos');
+
+            let planCuentas = [];
+
+            function centavosATexto(cent) {
+                const n = Number(cent) / 100;
+                return n.toFixed(2).replace('.', ',');
+            }
+            function textoACentavos(txt) {
+                const t = String(txt || '').trim().replace(',', '.');
+                if (t === '') return 0;
+                const num = parseFloat(t);
+                if (isNaN(num) || num < 0) return 0;
+                return Math.round(num * 100);
+            }
+
+            function crearFilaLinea() {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <input type="text" class="linea-codigo" list="listaCuentas" placeholder="1.1.01" style="width:100%; padding:8px; border:1px solid #dce5ef; border-radius:8px;">
+                    </td>
+                    <td>
+                        <input type="text" class="linea-cuenta" readonly style="width:100%; padding:8px; border:1px solid #dce5ef; border-radius:8px; background:#f7f9fc;">
+                    </td>
+                    <td>
+                        <input type="text" class="linea-glosa" placeholder="Detalle de la operación" maxlength="200" style="width:100%; padding:8px; border:1px solid #dce5ef; border-radius:8px;">
+                    </td>
+                    <td>
+                        <input type="text" class="linea-debe" inputmode="decimal" placeholder="0,00" style="width:100%; padding:8px; border:1px solid #dce5ef; border-radius:8px; text-align:right;">
+                    </td>
+                    <td>
+                        <input type="text" class="linea-haber" inputmode="decimal" placeholder="0,00" style="width:100%; padding:8px; border:1px solid #dce5ef; border-radius:8px; text-align:right;">
+                    </td>
+                    <td style="text-align:center;">
+                        <button type="button" class="btn btn-sm btn-danger btn-eliminar-linea" style="padding:4px 10px;">✕</button>
+                    </td>
+                `;
+
+                const inputCodigo = tr.querySelector('.linea-codigo');
+                const inputCuenta = tr.querySelector('.linea-cuenta');
+                inputCodigo.addEventListener('input', function () {
+                    const cod = this.value.trim();
+                    const encontrada = planCuentas.find(c => c.codigo === cod);
+                    inputCuenta.value = encontrada ? encontrada.nombre : '';
+                    recalcularTotales();
+                });
+
+                const inputDebe = tr.querySelector('.linea-debe');
+                const inputHaber = tr.querySelector('.linea-haber');
+                inputDebe.addEventListener('input', function () {
+                    if (this.value.trim() !== '') inputHaber.value = '';
+                    recalcularTotales();
+                });
+                inputHaber.addEventListener('input', function () {
+                    if (this.value.trim() !== '') inputDebe.value = '';
+                    recalcularTotales();
+                });
+
+                tr.querySelector('.btn-eliminar-linea').addEventListener('click', function () {
+                    if (diarioLineas.children.length > 2) {
+                        tr.remove();
+                        recalcularTotales();
+                    } else {
+                        mostrarToast('El asiento debe tener al menos 2 líneas.', 'error');
+                    }
+                });
+
+                return tr;
+            }
+
+            function recalcularTotales() {
+                let totalD = 0, totalH = 0;
+                diarioLineas.querySelectorAll('tr').forEach(tr => {
+                    const d = textoACentavos(tr.querySelector('.linea-debe').value);
+                    const h = textoACentavos(tr.querySelector('.linea-haber').value);
+                    totalD += d;
+                    totalH += h;
+                });
+                totalDebeEl.textContent = centavosATexto(totalD);
+                totalHaberEl.textContent = centavosATexto(totalH);
+
+                if (totalD === 0 && totalH === 0) {
+                    diarioEstado.textContent = 'Complete las líneas del asiento';
+                    diarioEstado.style.background = '#edf2f7';
+                    diarioEstado.style.color = '#4a6a8b';
+                    btnGuardarAsiento.disabled = true;
+                } else if (totalD === totalH) {
+                    diarioEstado.textContent = '✔ El asiento cuadra (Debe = Haber)';
+                    diarioEstado.style.background = '#e8f5e9';
+                    diarioEstado.style.color = '#2e7d32';
+                    btnGuardarAsiento.disabled = false;
+                } else {
+                    diarioEstado.textContent = '✖ El asiento NO cuadra. Diferencia: ' + centavosATexto(Math.abs(totalD - totalH));
+                    diarioEstado.style.background = '#ffebee';
+                    diarioEstado.style.color = '#c0392b';
+                    btnGuardarAsiento.disabled = true;
+                }
+            }
+
+            async function initDiario() {
+                const r = await api('diario_init');
+                if (!r.ok) {
+                    mostrarToast(r.error || 'Error al cargar el Libro Diario', 'error');
+                    return;
+                }
+                planCuentas = r.plan || [];
+                diarioNumero.value = r.proximo || '';
+                let dl = document.getElementById('listaCuentas');
+                if (!dl) {
+                    dl = document.createElement('datalist');
+                    dl.id = 'listaCuentas';
+                    document.body.appendChild(dl);
+                }
+                dl.innerHTML = planCuentas.map(c => `<option value="${c.codigo}">${c.nombre}</option>`).join('');
+
+                renderizarUltimosAsientos(r.ultimos || []);
+
+                if (diarioLineas.children.length === 0) {
+                    diarioLineas.appendChild(crearFilaLinea());
+                    diarioLineas.appendChild(crearFilaLinea());
+                }
+                recalcularTotales();
+            }
+
+            function renderizarUltimosAsientos(ultimos) {
+                if (!ultimos || ultimos.length === 0) {
+                    tablaUltimosAsientos.innerHTML = '<tr><td colspan="7" class="empty-msg">Sin asientos registrados.</td></tr>';
+                    return;
+                }
+                const grupos = {};
+                ultimos.forEach(l => {
+                    if (!grupos[l.asiento]) grupos[l.asiento] = [];
+                    grupos[l.asiento].push(l);
+                });
+                let html = '';
+                Object.keys(grupos).sort((a,b) => b - a).forEach(num => {
+                    const lineas = grupos[num];
+                    lineas.forEach((l, idx) => {
+                        html += `<tr>
+                            <td>${idx === 0 ? fmtFecha(l.fecha) : ''}</td>
+                            <td>${idx === 0 ? num : ''}</td>
+                            <td>${escH(l.codigo)}</td>
+                            <td>${escH(l.cuenta)}</td>
+                            <td>${escH(l.glosa)}</td>
+                            <td style="text-align:right;">${l.debe !== '0.00' ? l.debe.replace('.', ',') : ''}</td>
+                            <td style="text-align:right;">${l.haber !== '0.00' ? l.haber.replace('.', ',') : ''}</td>
+                        </tr>`;
+                    });
+                });
+                tablaUltimosAsientos.innerHTML = html;
+            }
+
+            async function guardarAsiento() {
+                const fecha = diarioFecha.value;
+                if (!fecha) { mostrarToast('Seleccione una fecha.', 'error'); return; }
+
+                const lineas = [];
+                let valido = true;
+                diarioLineas.querySelectorAll('tr').forEach(tr => {
+                    const codigo = tr.querySelector('.linea-codigo').value.trim();
+                    const glosa = tr.querySelector('.linea-glosa').value.trim();
+                    const debe = tr.querySelector('.linea-debe').value.trim();
+                    const haber = tr.querySelector('.linea-haber').value.trim();
+                    if (!codigo || !glosa) { valido = false; return; }
+                    if (debe === '' && haber === '') { valido = false; return; }
+                    lineas.push({ codigo, glosa, debe, haber });
+                });
+
+                if (!valido || lineas.length < 2) {
+                    mostrarToast('Complete código, glosa y un importe (Debe o Haber) en cada línea.', 'error');
+                    return;
+                }
+
+                const r = await api('diario_create', {
+                    asiento: { fecha, lineas }
+                });
+
+                if (!r.ok) {
+                    mostrarToast(r.error, 'error');
+                    return;
+                }
+
+                mostrarToast(`Asiento Nº ${r.asiento} registrado correctamente.`, 'success');
+
+                diarioLineas.innerHTML = '';
+                diarioLineas.appendChild(crearFilaLinea());
+                diarioLineas.appendChild(crearFilaLinea());
+                diarioFecha.value = fecha;
+                recalcularTotales();
+
+                await initDiario();
+            }
+
+            function cambiarATab5() {
+                document.querySelectorAll('.tab-content').forEach(el => {
+                    el.classList.remove('active');
+                    el.style.display = 'none';
+                });
+                tab5.classList.add('active');
+                tab5.style.display = 'block';
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                btnDiario.classList.add('active');
+                initDiario();
+            }
+
+            btnAgregarLinea.addEventListener('click', function () {
+                diarioLineas.appendChild(crearFilaLinea());
+                recalcularTotales();
+            });
+
+            btnGuardarAsiento.addEventListener('click', guardarAsiento);
+
+            btnDiario.addEventListener('click', cambiarATab5);
+
+            const hoyDiario = new Date().toISOString().split('T')[0];
+            diarioFecha.value = hoyDiario;
 
         })();
     </script>
